@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora A/B Test</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF8ED; --surface: #FFFFFF; --surface-2: #FFF3DC;
+    --border: #F0DFC4; --accent: #E8752A;
+    --accent-dim: rgba(232,117,42,.08); --accent-glow: rgba(232,117,42,.15);
+    --purple: #2D1B4E; --text: #2D1B4E;
+    --text-secondary: #6B5A7E; --text-muted: #9B8EAB;
+    --green: #2E8B57; --green-bg: rgba(46,139,87,.08);
+    --red: #C0392B; --red-bg: rgba(192,57,43,.08);
+    --radius: 14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh; display:flex; align-items:flex-start; justify-content:center;
+    padding:32px 24px;
+  }
+  .container { width:100%; max-width:520px; }
+  .header { margin-bottom:24px; }
+  .header h1 {
+    font-family:'Fraunces',serif; font-weight:500; font-size:28px;
+    letter-spacing:-.5px; margin-bottom:6px; color:var(--purple);
+  }
+  .header h1 span { color:var(--accent); }
+  .header p { color:var(--text-secondary); font-size:13px; line-height:1.5; }
+
+  .mode-tabs {
+    display:flex; background:var(--surface); border:1.5px solid var(--border);
+    border-radius:10px; padding:3px; margin-bottom:14px;
+  }
+  .mode-tab {
+    flex:1; padding:9px 8px; text-align:center; font-size:12px; font-weight:600;
+    color:var(--text-secondary); cursor:pointer; border-radius:8px; transition:all .2s;
+    border:none; background:none; font-family:'DM Sans',sans-serif;
+  }
+  .mode-tab:hover { color:var(--accent); }
+  .mode-tab.active {
+    background:var(--purple); color:#fff; font-weight:700;
+    box-shadow:0 2px 6px rgba(45,27,78,.12);
+  }
+
+  .card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:20px; margin-bottom:14px;
+    box-shadow:0 1px 3px rgba(45,27,78,.04);
+  }
+  .field { margin-bottom:16px; }
+  .field:last-child { margin-bottom:0; }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field-row-3 { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+
+  label {
+    display:block; font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.7px; color:var(--purple); margin-bottom:6px;
+  }
+  label .hint { text-transform:none; letter-spacing:0; color:var(--text-muted); font-weight:400; }
+
+  input[type="number"] {
+    width:100%; background:var(--surface-2); border:1.5px solid var(--border);
+    border-radius:8px; padding:10px 12px; font-family:'DM Sans',sans-serif;
+    font-size:15px; color:var(--text); outline:none; transition:border-color .2s,box-shadow .2s;
+    -moz-appearance:textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; }
+  input[type="number"]:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+  input[type="number"]::placeholder { color:var(--text-muted); }
+
+  .suffix-wrap { position:relative; }
+  .suffix-wrap .suffix {
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    color:var(--text-muted); font-size:13px; pointer-events:none;
+  }
+  .suffix-wrap input { padding-right:38px; }
+
+  .mini-toggle {
+    display:inline-flex; background:var(--surface-2); border:1.5px solid var(--border);
+    border-radius:8px; overflow:hidden; height:40px;
+  }
+  .mini-toggle-opt { position:relative; }
+  .mini-toggle-opt input { position:absolute; opacity:0; width:0; height:0; }
+  .mini-toggle-opt label {
+    display:flex; align-items:center; justify-content:center;
+    padding:0 12px; height:100%; font-size:12px; font-weight:600;
+    color:var(--text-muted); cursor:pointer; transition:all .2s;
+    text-transform:none; letter-spacing:0; margin-bottom:0; white-space:nowrap;
+  }
+  .mini-toggle-opt input:checked+label { background:var(--purple); color:#fff; }
+
+  .ci-selector { display:flex; gap:6px; }
+  .ci-option { flex:1; position:relative; }
+  .ci-option input { position:absolute; opacity:0; width:0; height:0; }
+  .ci-option label {
+    display:flex; align-items:center; justify-content:center;
+    padding:8px 6px; background:var(--surface-2); border:1.5px solid var(--border);
+    border-radius:8px; font-size:13px; font-weight:500; color:var(--text-secondary);
+    cursor:pointer; transition:all .2s; text-transform:none; letter-spacing:0; margin-bottom:0;
+  }
+  .ci-option input:checked+label {
+    background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;
+  }
+  .ci-option label:hover { border-color:var(--accent); color:var(--accent); }
+
+  .test-toggle {
+    display:flex; background:var(--surface-2); border-radius:8px;
+    border:1.5px solid var(--border); overflow:hidden;
+  }
+  .test-toggle-option { flex:1; position:relative; }
+  .test-toggle-option input { position:absolute; opacity:0; width:0; height:0; }
+  .test-toggle-option label {
+    display:flex; align-items:center; justify-content:center;
+    padding:8px; font-size:12px; font-weight:500; color:var(--text-secondary);
+    cursor:pointer; transition:all .2s; text-transform:none; letter-spacing:0;
+    margin-bottom:0; border-radius:0;
+  }
+  .test-toggle-option input:checked+label { background:var(--purple); color:#fff; font-weight:700; }
+
+  .computed-preview {
+    margin-top:6px; padding:8px 12px; background:var(--accent-dim);
+    border-radius:6px; border:1px solid rgba(232,117,42,.12);
+    font-size:12px; color:var(--accent); display:none;
+  }
+  .computed-preview strong { font-weight:700; }
+
+  .result-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:24px; text-align:center;
+    position:relative; overflow:hidden; box-shadow:0 1px 3px rgba(45,27,78,.04);
+  }
+  .result-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,var(--accent),var(--purple));
+    opacity:0; transition:opacity .4s;
+  }
+  .result-card.active::before { opacity:1; }
+  .result-label {
+    font-size:11px; text-transform:uppercase; letter-spacing:.8px;
+    color:var(--text-secondary); margin-bottom:10px; font-weight:700;
+  }
+  .result-value {
+    font-family:'Fraunces',serif; font-size:48px; font-weight:700;
+    color:var(--accent); letter-spacing:-1px; line-height:1; margin-bottom:4px;
+  }
+  .result-subtitle { font-size:12px; color:var(--text-muted); margin-bottom:16px; }
+  .result-details {
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--border);
+  }
+  .result-details.three-col { grid-template-columns:1fr 1fr 1fr; }
+  .detail-item { text-align:center; }
+  .detail-item .detail-value {
+    font-family:'Fraunces',serif; font-size:20px; font-weight:700;
+    color:var(--purple); margin-bottom:1px;
+  }
+  .detail-item .detail-label {
+    font-size:10px; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--text-muted); font-weight:500;
+  }
+
+  .sig-badge {
+    display:inline-flex; align-items:center; gap:5px; padding:6px 14px;
+    border-radius:16px; font-size:12px; font-weight:700; margin-top:12px;
+  }
+  .sig-badge.significant { background:var(--green-bg); color:var(--green); border:1px solid rgba(46,139,87,.2); }
+  .sig-badge.not-significant { background:var(--red-bg); color:var(--red); border:1px solid rgba(192,57,43,.2); }
+
+  .formula-note {
+    margin-top:12px; padding:10px 12px; background:var(--surface-2);
+    border-radius:8px; border:1px solid var(--border); font-size:11px;
+    color:var(--text-muted); line-height:1.5; text-align:left;
+  }
+  .formula-note code {
+    color:var(--purple); background:#fff; padding:1px 4px; border-radius:3px; font-size:10px; font-weight:500;
+  }
+
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  @media (max-width:500px) {
+    .field-row, .field-row-3 { grid-template-columns:1fr; gap:10px; }
+    .result-value { font-size:36px; }
+    .result-details.three-col { grid-template-columns:1fr; gap:6px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>A/B Test <span>Calculator</span></h1>
+    <p>Planeje o sample size ou analise resultados do seu experimento.</p>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('plan')">📐 Planejar</button>
+    <button class="mode-tab" onclick="switchMode('analyze')">🔍 Analisar resultados</button>
+  </div>
+
+  <!-- ===== PLAN ===== -->
+  <div class="panel active" id="panel-plan">
+    <div class="card">
+      <div class="field">
+        <div class="field-row">
+          <div>
+            <label>Tipo de teste</label>
+            <div class="test-toggle">
+              <div class="test-toggle-option">
+                <input type="radio" name="p_test" id="p_two" value="two" checked>
+                <label for="p_two">Bicaudal</label>
+              </div>
+              <div class="test-toggle-option">
+                <input type="radio" name="p_test" id="p_one" value="one">
+                <label for="p_one">Unicaudal</label>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label>Confiança</label>
+            <div class="ci-selector">
+              <div class="ci-option"><input type="radio" name="p_ci" id="p_ci90" value="90"><label for="p_ci90">90</label></div>
+              <div class="ci-option"><input type="radio" name="p_ci" id="p_ci95" value="95" checked><label for="p_ci95">95</label></div>
+              <div class="ci-option"><input type="radio" name="p_ci" id="p_ci99" value="99"><label for="p_ci99">99</label></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row-3">
+          <div>
+            <label>Taxa base (B)</label>
+            <div class="suffix-wrap">
+              <input type="number" id="p_baseline" placeholder="54" step="0.1" min="0.01" max="99.99" value="54">
+              <span class="suffix">%</span>
+            </div>
+          </div>
+          <div>
+            <label id="p_uplift_label">Variação esperada</label>
+            <div class="suffix-wrap">
+              <input type="number" id="p_uplift" placeholder="5" step="0.5" value="5">
+              <span class="suffix" id="p_uplift_suffix">p.p.</span>
+            </div>
+          </div>
+          <div>
+            <label style="visibility:hidden;">_</label>
+            <div class="mini-toggle">
+              <div class="mini-toggle-opt">
+                <input type="radio" name="p_umode" id="p_umode_pp" value="pp" checked>
+                <label for="p_umode_pp">p.p.</label>
+              </div>
+              <div class="mini-toggle-opt">
+                <input type="radio" name="p_umode" id="p_umode_rel" value="relative">
+                <label for="p_umode_rel">%</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="computed-preview" id="p_preview"></div>
+      </div>
+    </div>
+
+    <div class="result-card" id="planResult">
+      <div class="result-label">Amostra por grupo</div>
+      <div class="result-value" id="planValue">—</div>
+      <div class="result-subtitle" id="planSubtitle">Preencha os campos acima</div>
+      <div class="result-details" id="planDetails" style="display:none;">
+        <div class="detail-item">
+          <div class="detail-value" id="planTotal">—</div>
+          <div class="detail-label">Total (A + B)</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-value" id="planExpected">—</div>
+          <div class="detail-label">Taxa esperada (A)</div>
+        </div>
+      </div>
+      <div class="formula-note">
+        Evan Miller: <code>n = (Zα·√(2p₁q₁) + Zβ·√(p₁q₁+p₂q₂))² / (p₂−p₁)²</code> · Poder fixo em 80%
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ANALYZE ===== -->
+  <div class="panel" id="panel-analyze">
+    <div class="card">
+      <div class="field">
+        <div class="field-row">
+          <div>
+            <label>Tipo de teste</label>
+            <div class="test-toggle">
+              <div class="test-toggle-option">
+                <input type="radio" name="a_test" id="a_two" value="two" checked>
+                <label for="a_two">Bicaudal</label>
+              </div>
+              <div class="test-toggle-option">
+                <input type="radio" name="a_test" id="a_one" value="one">
+                <label for="a_one">Unicaudal</label>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label>Entrada</label>
+            <div class="test-toggle">
+              <div class="test-toggle-option">
+                <input type="radio" name="a_mode" id="a_mode_abs" value="absolute" checked>
+                <label for="a_mode_abs"># absoluto</label>
+              </div>
+              <div class="test-toggle-option">
+                <input type="radio" name="a_mode" id="a_mode_pct" value="percent">
+                <label for="a_mode_pct">Taxa %</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <div>
+            <label>Amostra B <span class="hint">— controle</span></label>
+            <input type="number" id="a_nB" placeholder="5000" min="1" value="5000">
+          </div>
+          <div>
+            <label>Amostra A <span class="hint">— variante</span></label>
+            <input type="number" id="a_nA" placeholder="5000" min="1" value="5000">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <div>
+            <label id="a_convB_label">Conversões B</label>
+            <div class="suffix-wrap">
+              <input type="number" id="a_convB" placeholder="250" min="0" value="250">
+              <span class="suffix" id="a_convB_suffix"></span>
+            </div>
+          </div>
+          <div>
+            <label id="a_convA_label">Conversões A</label>
+            <div class="suffix-wrap">
+              <input type="number" id="a_convA" placeholder="300" min="0" value="300">
+              <span class="suffix" id="a_convA_suffix"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-card" id="analyzeResult">
+      <div class="result-label">Confiança observada</div>
+      <div class="result-value" id="analyzeValue">—</div>
+      <div class="result-subtitle" id="analyzeSubtitle">Preencha os campos acima</div>
+      <div id="analyzeBadge"></div>
+      <div class="result-details three-col" id="analyzeDetails" style="display:none;">
+        <div class="detail-item">
+          <div class="detail-value" id="analyzeRateB">—</div>
+          <div class="detail-label">Taxa B</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-value" id="analyzeRateA">—</div>
+          <div class="detail-label">Taxa A</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-value" id="analyzeUplift">—</div>
+          <div class="detail-label">Variação</div>
+        </div>
+      </div>
+      <div class="formula-note" style="margin-top:12px;">
+        <code>Z = (pA − pB) / √(p̂(1−p̂)(1/nA+1/nB))</code> → p-valor → confiança
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const POWER = 0.80;
+
+  function invNorm(p) {
+    if (p <= 0) return -Infinity; if (p >= 1) return Infinity; if (p === 0.5) return 0;
+    let t = p < 0.5 ? Math.sqrt(-2 * Math.log(p)) : Math.sqrt(-2 * Math.log(1 - p));
+    let z = t - (2.515517 + 0.802853 * t + 0.010328 * t * t) /
+                (1 + 1.432788 * t + 0.189269 * t * t + 0.001308 * t * t * t);
+    return p < 0.5 ? -z : z;
+  }
+
+  function normCDF(x) {
+    if (x === Infinity) return 1; if (x === -Infinity) return 0;
+    const s = x < 0 ? -1 : 1; x = Math.abs(x) / Math.SQRT2;
+    const t = 1 / (1 + 0.3275911 * x);
+    const y = 1 - ((((1.061405429*t - 1.453152027)*t + 1.421413741)*t - 0.284496736)*t + 0.254829592) * t * Math.exp(-x * x);
+    return 0.5 * (1 + s * y);
+  }
+
+  function switchMode(m) {
+    document.querySelectorAll('.mode-tab').forEach((t, i) =>
+      t.classList.toggle('active', (m === 'plan' && i === 0) || (m === 'analyze' && i === 1)));
+    document.getElementById('panel-plan').classList.toggle('active', m === 'plan');
+    document.getElementById('panel-analyze').classList.toggle('active', m === 'analyze');
+  }
+
+  // ===== PLAN: Evan Miller formula (supports positive & negative delta) =====
+  function updateUpliftUI() {
+    const mode = document.querySelector('input[name="p_umode"]:checked').value;
+    document.getElementById('p_uplift_label').textContent = mode === 'pp' ? 'Variação esperada' : 'Variação relativa';
+    document.getElementById('p_uplift_suffix').textContent = mode === 'pp' ? 'p.p.' : '%';
+    calcPlan();
+  }
+
+  function calcPlan() {
+    const base = parseFloat(document.getElementById('p_baseline').value);
+    const raw = parseFloat(document.getElementById('p_uplift').value);
+    const umode = document.querySelector('input[name="p_umode"]:checked').value;
+    const ci = parseInt(document.querySelector('input[name="p_ci"]:checked').value);
+    const tails = document.querySelector('input[name="p_test"]:checked').value;
+    const card = document.getElementById('planResult'), val = document.getElementById('planValue');
+    const sub = document.getElementById('planSubtitle'), det = document.getElementById('planDetails');
+    const preview = document.getElementById('p_preview');
+
+    if (isNaN(base) || isNaN(raw) || base <= 0 || base >= 100 || raw === 0) {
+      val.textContent = '—'; sub.textContent = 'Preencha os campos';
+      det.style.display = 'none'; preview.style.display = 'none'; card.classList.remove('active'); return;
+    }
+
+    const p1 = base / 100;
+    const p2 = umode === 'pp' ? p1 + raw / 100 : p1 * (1 + raw / 100);
+
+    if (p2 >= 1 || p2 <= 0) {
+      val.textContent = '—'; sub.textContent = 'Taxa resultante fora do intervalo (0%–100%)';
+      det.style.display = 'none'; preview.style.display = 'none'; card.classList.remove('active'); return;
+    }
+
+    // Preview with direction indicator
+    const isNeg = p2 < p1;
+    const arrow = isNeg ? '↓' : '↑';
+    if (umode === 'pp') {
+      const rel = ((p2 - p1) / p1 * 100).toFixed(1);
+      preview.innerHTML = `${arrow} <strong>${(p1*100).toFixed(1)}%</strong> → <strong>${(p2*100).toFixed(1)}%</strong> (${rel > 0 ? '+' : ''}${rel}% relativo)`;
+    } else {
+      const pp = ((p2 - p1) * 100).toFixed(1);
+      preview.innerHTML = `${arrow} <strong>${(p1*100).toFixed(1)}%</strong> → <strong>${(p2*100).toFixed(1)}%</strong> (${pp > 0 ? '+' : ''}${pp} p.p.)`;
+    }
+    preview.style.display = 'block';
+
+    // Evan Miller formula — uses absolute delta, works for both directions
+    // Under H0, both groups have rate p1 (baseline)
+    // Under H1, group A has rate p2 (which can be > or < p1)
+    const alpha = tails === 'two' ? (1 - ci / 100) / 2 : (1 - ci / 100);
+    const za = invNorm(1 - alpha);
+    const zb = invNorm(POWER);
+    const delta = Math.abs(p2 - p1);
+
+    const sd1 = Math.sqrt(2 * p1 * (1 - p1));
+    const sd2 = Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
+    const n = Math.ceil(Math.pow(za * sd1 + zb * sd2, 2) / (delta * delta));
+
+    val.textContent = n.toLocaleString('pt-BR');
+    const sign = raw > 0 ? '+' : '';
+    const unit = umode === 'pp' ? 'p.p.' : '% relativo';
+    const verb = isNeg ? 'redução' : 'aumento';
+    sub.textContent = `por grupo — para detectar ${verb} de ${sign}${raw} ${unit}`;
+    det.style.display = 'grid'; card.classList.add('active');
+    document.getElementById('planTotal').textContent = (n * 2).toLocaleString('pt-BR');
+    document.getElementById('planExpected').textContent = (p2 * 100).toFixed(2) + '%';
+  }
+
+  ['p_baseline', 'p_uplift'].forEach(id => document.getElementById(id).addEventListener('input', calcPlan));
+  ['p_ci', 'p_test'].forEach(n => document.querySelectorAll(`input[name="${n}"]`).forEach(r => r.addEventListener('change', calcPlan)));
+  document.querySelectorAll('input[name="p_umode"]').forEach(r => r.addEventListener('change', updateUpliftUI));
+  calcPlan();
+
+  // ===== ANALYZE =====
+  function updateAnalyzeUI() {
+    const mode = document.querySelector('input[name="a_mode"]:checked').value;
+    if (mode === 'percent') {
+      document.getElementById('a_convB_label').innerHTML = 'Taxa B <span class="hint">— controle</span>';
+      document.getElementById('a_convA_label').innerHTML = 'Taxa A <span class="hint">— variante</span>';
+      document.getElementById('a_convB_suffix').textContent = '%';
+      document.getElementById('a_convA_suffix').textContent = '%';
+    } else {
+      document.getElementById('a_convB_label').innerHTML = 'Conversões B';
+      document.getElementById('a_convA_label').innerHTML = 'Conversões A';
+      document.getElementById('a_convB_suffix').textContent = '';
+      document.getElementById('a_convA_suffix').textContent = '';
+    }
+    calcAnalyze();
+  }
+
+  function calcAnalyze() {
+    const nB = parseFloat(document.getElementById('a_nB').value);
+    const nA = parseFloat(document.getElementById('a_nA').value);
+    const cB = parseFloat(document.getElementById('a_convB').value);
+    const cA = parseFloat(document.getElementById('a_convA').value);
+    const tails = document.querySelector('input[name="a_test"]:checked').value;
+    const mode = document.querySelector('input[name="a_mode"]:checked').value;
+    const card = document.getElementById('analyzeResult'), val = document.getElementById('analyzeValue');
+    const sub = document.getElementById('analyzeSubtitle'), det = document.getElementById('analyzeDetails');
+    const badge = document.getElementById('analyzeBadge');
+
+    if (isNaN(nB) || isNaN(nA) || isNaN(cB) || isNaN(cA) || nB <= 0 || nA <= 0) {
+      val.textContent = '—'; sub.textContent = 'Preencha os campos';
+      det.style.display = 'none'; badge.innerHTML = ''; card.classList.remove('active'); return;
+    }
+
+    let pB, pA;
+    if (mode === 'percent') { pB = cB / 100; pA = cA / 100; }
+    else { pB = cB / nB; pA = cA / nA; }
+
+    if (pB < 0 || pB > 1 || pA < 0 || pA > 1) {
+      val.textContent = '—'; sub.textContent = 'Taxas entre 0% e 100%';
+      det.style.display = 'none'; badge.innerHTML = ''; card.classList.remove('active'); return;
+    }
+
+    const pool = (pB * nB + pA * nA) / (nB + nA);
+    const se = Math.sqrt(pool * (1 - pool) * (1 / nB + 1 / nA));
+
+    if (se === 0) {
+      val.textContent = '—'; sub.textContent = 'Sem variância';
+      det.style.display = 'none'; badge.innerHTML = ''; card.classList.remove('active'); return;
+    }
+
+    const z = (pA - pB) / se;
+    let pVal = tails === 'two' ? 2 * (1 - normCDF(Math.abs(z))) : (z > 0 ? 1 - normCDF(z) : normCDF(z));
+    const conf = (1 - pVal) * 100;
+    const uplift = pB > 0 ? (pA - pB) / pB * 100 : 0;
+
+    val.textContent = conf.toFixed(1) + '%';
+    sub.textContent = `p-valor: ${pVal < 0.0001 ? '< 0.0001' : pVal.toFixed(4)} · Z: ${z.toFixed(3)}`;
+    det.style.display = 'grid'; card.classList.add('active');
+    document.getElementById('analyzeRateB').textContent = (pB * 100).toFixed(2) + '%';
+    document.getElementById('analyzeRateA').textContent = (pA * 100).toFixed(2) + '%';
+    document.getElementById('analyzeUplift').textContent = (uplift >= 0 ? '+' : '') + uplift.toFixed(2) + '%';
+    const isSig = pVal < 0.05;
+    badge.innerHTML = `<div class="sig-badge ${isSig ? 'significant' : 'not-significant'}">
+      ${isSig ? '✓ Significativo (p < 0.05)' : '✗ Não significativo (p ≥ 0.05)'}
+    </div>`;
+  }
+
+  ['a_nB', 'a_nA', 'a_convB', 'a_convA'].forEach(id => document.getElementById(id).addEventListener('input', calcAnalyze));
+  ['a_test', 'a_mode'].forEach(n => document.querySelectorAll(`input[name="${n}"]`).forEach(r => r.addEventListener('change', n === 'a_mode' ? updateAnalyzeUI : calcAnalyze)));
+  calcAnalyze();
+</script>
+</body>
+</html>
