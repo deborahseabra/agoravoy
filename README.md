@@ -14,7 +14,7 @@ Dado uma taxa base e a variação que você quer detectar, calcula o tamanho de 
 - **Teste bicaudal ou unicaudal**
 - Preview em tempo real mostrando a conversão entre modos (p.p. ↔ % relativo)
 
-### 🔍 Analisar resultados
+### 🔍 Analisar proporções
 
 Dado o tamanho de amostra e conversões observadas de cada grupo, calcula o nível de confiança do resultado.
 
@@ -22,48 +22,53 @@ Dado o tamanho de amostra e conversões observadas de cada grupo, calcula o nív
 - Retorna **p-valor**, **Z-score** e **confiança observada**
 - Badge visual de significância (p < 0.05)
 - Cálculo de uplift observado entre grupos
+- **Use para:** taxas de conversão, retenção, churn, CTR
 
-## Fórmula
+### 📊 Comparar médias (t-test)
 
-A aba de planejamento usa a fórmula de Evan Miller para comparação de duas proporções:
+Compara a média de uma métrica contínua entre dois grupos usando Welch's t-test.
+
+- Inputs: **média**, **desvio padrão** e **n** de cada grupo
+- Retorna **p-valor**, **t-statistic**, **graus de liberdade** e **confiança observada**
+- Não assume variâncias iguais (Welch's t-test)
+- **Use para:** CSAT, NPS, nota média, tempo de resposta, ticket médio
+
+## Fórmulas
+
+### Planejar sample size — Evan Miller
 
 ```
 n = (Zα · √(2·p₁·q₁) + Zβ · √(p₁·q₁ + p₂·q₂))² / (p₂ − p₁)²
 ```
 
-Onde:
-- `p₁` = taxa base (controle)
-- `p₂` = taxa esperada (variante)
-- `q = 1 − p`
-- `Zα` = valor Z para o nível de confiança (1.96 para 95% bicaudal)
-- `Zβ` = valor Z para o poder estatístico (0.84 para 80%)
+Onde `p₁` = taxa base, `p₂` = taxa esperada, `q = 1 − p`, `Zα` = valor Z para o nível de confiança, `Zβ` = valor Z para o poder estatístico. Poder fixo em 80%.
 
-O poder estatístico é fixado em **80%** (padrão da indústria, Cohen 1988).
-
-A aba de análise usa o **Z-test para duas proporções** com variância pooled:
+### Analisar proporções — Z-test pooled
 
 ```
-Z = (pA − pB) / √(p̂·(1−p̂)·(1/nA + 1/nB))
+Z = (pA − pB) / √(p̂ · (1−p̂) · (1/nA + 1/nB))
 ```
 
 Onde `p̂` é a proporção pooled dos dois grupos.
 
+### Comparar médias — Welch's t-test
+
+```
+t = (x̄A − x̄B) / √(s²A/nA + s²B/nB)
+```
+
+Graus de liberdade calculados pela aproximação de Welch-Satterthwaite.
+
 ### Referências
 
-- [Evan Miller — Sample Size Calculator (código-fonte)](https://www.evanmiller.org/ab-testing/sample-size.html)
+- [Evan Miller — Sample Size Calculator](https://www.evanmiller.org/ab-testing/sample-size.html)
 - [Lachin, J.M. (1981). Introduction to sample size determination and power analysis for clinical trials](https://doi.org/10.1016/0197-2456(81)90001-5)
 - Cohen, J. (1988). *Statistical Power Analysis for the Behavioral Sciences*. 2nd ed.
+- Welch, B.L. (1947). *The generalization of "Student's" problem when several different population variances are involved*. Biometrika, 34(1-2), 28–35.
 
 ## Como usar
 
-Abra `index.html` no navegador. Não precisa de servidor, build, nem instalação.
-
-```bash
-git clone https://github.com/deborahseabra/agoravoy.git
-open index.html
-```
-
-Ou acesse via GitHub Pages se habilitado no repositório.
+[Acesse via navegador] (https://deborahseabra.github.io/agoravoy)
 
 ## Stack
 
