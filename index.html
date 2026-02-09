@@ -31,14 +31,15 @@
   .header h1 span { color:var(--accent); }
   .header p { color:var(--text-secondary); font-size:13px; line-height:1.5; }
 
+  /* Tabs */
   .mode-tabs {
     display:flex; background:var(--surface); border:1.5px solid var(--border);
-    border-radius:10px; padding:3px; margin-bottom:14px;
+    border-radius:10px; padding:3px; margin-bottom:14px; gap:3px;
   }
   .mode-tab {
-    flex:1; padding:9px 8px; text-align:center; font-size:12px; font-weight:600;
+    flex:1; padding:9px 6px; text-align:center; font-size:11px; font-weight:600;
     color:var(--text-secondary); cursor:pointer; border-radius:8px; transition:all .2s;
-    border:none; background:none; font-family:'DM Sans',sans-serif;
+    border:none; background:none; font-family:'DM Sans',sans-serif; line-height:1.3;
   }
   .mode-tab:hover { color:var(--accent); }
   .mode-tab.active {
@@ -46,6 +47,7 @@
     box-shadow:0 2px 6px rgba(45,27,78,.12);
   }
 
+  /* Card */
   .card {
     background:var(--surface); border:1px solid var(--border);
     border-radius:var(--radius); padding:20px; margin-bottom:14px;
@@ -129,6 +131,7 @@
   }
   .computed-preview strong { font-weight:700; }
 
+  /* Result */
   .result-card {
     background:var(--surface); border:1px solid var(--border);
     border-radius:var(--radius); padding:24px; text-align:center;
@@ -180,6 +183,10 @@
     color:var(--purple); background:#fff; padding:1px 4px; border-radius:3px; font-size:10px; font-weight:500;
   }
 
+  .use-case-hint {
+    font-size:11px; color:var(--text-muted); margin-top:8px; padding:0 2px; line-height:1.4;
+  }
+
   .panel { display:none; }
   .panel.active { display:block; }
 
@@ -187,6 +194,7 @@
     .field-row, .field-row-3 { grid-template-columns:1fr; gap:10px; }
     .result-value { font-size:36px; }
     .result-details.three-col { grid-template-columns:1fr; gap:6px; }
+    .mode-tab { font-size:10px; padding:8px 4px; }
   }
 </style>
 </head>
@@ -198,11 +206,12 @@
   </div>
 
   <div class="mode-tabs">
-    <button class="mode-tab active" onclick="switchMode('plan')">📐 Planejar</button>
-    <button class="mode-tab" onclick="switchMode('analyze')">🔍 Analisar resultados</button>
+    <button class="mode-tab active" onclick="switchMode('plan')">📐 Planejar<br>sample size</button>
+    <button class="mode-tab" onclick="switchMode('analyze')">🔍 Analisar<br>proporções</button>
+    <button class="mode-tab" onclick="switchMode('ttest')">📊 Comparar<br>médias</button>
   </div>
 
-  <!-- ===== PLAN ===== -->
+  <!-- ===== PANEL 1: PLAN ===== -->
   <div class="panel active" id="panel-plan">
     <div class="card">
       <div class="field">
@@ -230,7 +239,6 @@
           </div>
         </div>
       </div>
-
       <div class="field">
         <div class="field-row-3">
           <div>
@@ -264,7 +272,6 @@
         <div class="computed-preview" id="p_preview"></div>
       </div>
     </div>
-
     <div class="result-card" id="planResult">
       <div class="result-label">Amostra por grupo</div>
       <div class="result-value" id="planValue">—</div>
@@ -285,7 +292,7 @@
     </div>
   </div>
 
-  <!-- ===== ANALYZE ===== -->
+  <!-- ===== PANEL 2: ANALYZE PROPORTIONS ===== -->
   <div class="panel" id="panel-analyze">
     <div class="card">
       <div class="field">
@@ -318,41 +325,39 @@
           </div>
         </div>
       </div>
-
       <div class="field">
         <div class="field-row">
           <div>
             <label>Amostra B <span class="hint">— controle</span></label>
-            <input type="number" id="a_nB" placeholder="10" min="1" value="10">
+            <input type="number" id="a_nB" placeholder="5000" min="1" value="5000">
           </div>
           <div>
             <label>Amostra A <span class="hint">— variante</span></label>
-            <input type="number" id="a_nA" placeholder="10" min="1" value="10">
+            <input type="number" id="a_nA" placeholder="5000" min="1" value="5000">
           </div>
         </div>
       </div>
-
       <div class="field">
         <div class="field-row">
           <div>
             <label id="a_convB_label">Conversões B</label>
             <div class="suffix-wrap">
-              <input type="number" id="a_convB" placeholder="5" min="0" value="5">
+              <input type="number" id="a_convB" placeholder="250" min="0" value="250">
               <span class="suffix" id="a_convB_suffix"></span>
             </div>
           </div>
           <div>
             <label id="a_convA_label">Conversões A</label>
             <div class="suffix-wrap">
-              <input type="number" id="a_convA" placeholder="3" min="0" value="3">
+              <input type="number" id="a_convA" placeholder="300" min="0" value="300">
               <span class="suffix" id="a_convA_suffix"></span>
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <div class="result-card" id="analyzeResult">
+    <div class="use-case-hint">Use para: taxas de conversão, retenção, churn, CTR</div>
+    <div class="result-card" id="analyzeResult" style="margin-top:8px;">
       <div class="result-label">Confiança observada</div>
       <div class="result-value" id="analyzeValue">—</div>
       <div class="result-subtitle" id="analyzeSubtitle">Preencha os campos acima</div>
@@ -376,16 +381,103 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== PANEL 3: T-TEST (compare means) ===== -->
+  <div class="panel" id="panel-ttest">
+    <div class="card">
+      <div class="field">
+        <div class="field-row">
+          <div>
+            <label>Tipo de teste</label>
+            <div class="test-toggle">
+              <div class="test-toggle-option">
+                <input type="radio" name="t_test" id="t_two" value="two" checked>
+                <label for="t_two">Bicaudal</label>
+              </div>
+              <div class="test-toggle-option">
+                <input type="radio" name="t_test" id="t_one" value="one">
+                <label for="t_one">Unicaudal</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-row">
+          <div style="text-align:center;">
+            <label style="margin-bottom:12px;">Grupo B <span class="hint">— controle</span></label>
+          </div>
+          <div style="text-align:center;">
+            <label style="margin-bottom:12px;">Grupo A <span class="hint">— variante</span></label>
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:10px;">
+          <div>
+            <label>Média B</label>
+            <input type="number" id="t_meanB" placeholder="4.61" step="0.01" value="4.61">
+          </div>
+          <div>
+            <label>Média A</label>
+            <input type="number" id="t_meanA" placeholder="4.67" step="0.01" value="4.67">
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:10px;">
+          <div>
+            <label>Desvio padrão B</label>
+            <input type="number" id="t_sdB" placeholder="0.5" step="0.01" min="0.001" value="0.5">
+          </div>
+          <div>
+            <label>Desvio padrão A</label>
+            <input type="number" id="t_sdA" placeholder="0.5" step="0.01" min="0.001" value="0.5">
+          </div>
+        </div>
+        <div class="field-row">
+          <div>
+            <label>Amostra B (n)</label>
+            <input type="number" id="t_nB" placeholder="816" min="2" value="816">
+          </div>
+          <div>
+            <label>Amostra A (n)</label>
+            <input type="number" id="t_nA" placeholder="166" min="2" value="166">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="use-case-hint">Use para: CSAT, NPS, nota média, tempo de resposta, ticket médio</div>
+    <div class="result-card" id="ttestResult" style="margin-top:8px;">
+      <div class="result-label">Confiança observada</div>
+      <div class="result-value" id="ttestValue">—</div>
+      <div class="result-subtitle" id="ttestSubtitle">Preencha os campos acima</div>
+      <div id="ttestBadge"></div>
+      <div class="result-details three-col" id="ttestDetails" style="display:none;">
+        <div class="detail-item">
+          <div class="detail-value" id="ttestMeanB">—</div>
+          <div class="detail-label">Média B</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-value" id="ttestMeanA">—</div>
+          <div class="detail-label">Média A</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-value" id="ttestDiff">—</div>
+          <div class="detail-label">Diferença</div>
+        </div>
+      </div>
+      <div class="formula-note" style="margin-top:12px;">
+        Welch's t-test: <code>t = (x̄A − x̄B) / √(s²A/nA + s²B/nB)</code> → p-valor → confiança
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
   const POWER = 0.80;
 
+  // ===== Math =====
   function invNorm(p) {
     if (p <= 0) return -Infinity; if (p >= 1) return Infinity; if (p === 0.5) return 0;
     let t = p < 0.5 ? Math.sqrt(-2 * Math.log(p)) : Math.sqrt(-2 * Math.log(1 - p));
-    let z = t - (2.515517 + 0.802853 * t + 0.010328 * t * t) /
-                (1 + 1.432788 * t + 0.189269 * t * t + 0.001308 * t * t * t);
+    let z = t - (2.515517 + 0.802853*t + 0.010328*t*t) / (1 + 1.432788*t + 0.189269*t*t + 0.001308*t*t*t);
     return p < 0.5 ? -z : z;
   }
 
@@ -397,14 +489,75 @@
     return 0.5 * (1 + s * y);
   }
 
-  function switchMode(m) {
-    document.querySelectorAll('.mode-tab').forEach((t, i) =>
-      t.classList.toggle('active', (m === 'plan' && i === 0) || (m === 'analyze' && i === 1)));
-    document.getElementById('panel-plan').classList.toggle('active', m === 'plan');
-    document.getElementById('panel-analyze').classList.toggle('active', m === 'analyze');
+  // t-distribution CDF approximation (Abramowitz & Stegun 26.7.5 via normal approx for large df)
+  // For df > 30, t-distribution ≈ normal. For smaller df, use better approx.
+  function tCDF(t, df) {
+    // Hill's 1970 approximation — accurate for all df
+    const x = df / (df + t * t);
+    const prob = 0.5 * incompleteBeta(df / 2, 0.5, x);
+    return t >= 0 ? 1 - prob : prob;
   }
 
-  // ===== PLAN: Evan Miller formula (supports positive & negative delta) =====
+  // Regularized incomplete beta function via continued fraction (Lentz's method)
+  function incompleteBeta(a, b, x) {
+    if (x === 0) return 0;
+    if (x === 1) return 1;
+
+    const lnBeta = lgamma(a) + lgamma(b) - lgamma(a + b);
+    const front = Math.exp(Math.log(x) * a + Math.log(1 - x) * b - lnBeta);
+
+    // Lentz's continued fraction
+    let f = 1, c = 1, d = 1 - (a + b) * x / (a + 1);
+    if (Math.abs(d) < 1e-30) d = 1e-30;
+    d = 1 / d; f = d;
+
+    for (let i = 1; i <= 200; i++) {
+      let m = i, numerator;
+      // Even step
+      numerator = m * (b - m) * x / ((a + 2*m - 1) * (a + 2*m));
+      d = 1 + numerator * d; if (Math.abs(d) < 1e-30) d = 1e-30; d = 1/d;
+      c = 1 + numerator / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+      f *= d * c;
+      // Odd step
+      numerator = -(a + m) * (a + b + m) * x / ((a + 2*m) * (a + 2*m + 1));
+      d = 1 + numerator * d; if (Math.abs(d) < 1e-30) d = 1e-30; d = 1/d;
+      c = 1 + numerator / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+      f *= d * c;
+      if (Math.abs(d * c - 1) < 1e-10) break;
+    }
+    return front / a * f;
+  }
+
+  // Log-gamma (Stirling's approx + Lanczos)
+  function lgamma(x) {
+    const g = 7;
+    const coef = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+      771.32342877765313, -176.61502916214059, 12.507343278686905,
+      -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+    x -= 1;
+    let a = coef[0];
+    for (let i = 1; i < g + 2; i++) a += coef[i] / (x + i);
+    const t = x + g + 0.5;
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+
+  // Welch-Satterthwaite degrees of freedom
+  function welchDF(s1, n1, s2, n2) {
+    const v1 = s1*s1/n1, v2 = s2*s2/n2;
+    return Math.pow(v1 + v2, 2) / (v1*v1/(n1-1) + v2*v2/(n2-1));
+  }
+
+  // ===== Tab switching =====
+  function switchMode(m) {
+    const modes = ['plan', 'analyze', 'ttest'];
+    document.querySelectorAll('.mode-tab').forEach((t, i) =>
+      t.classList.toggle('active', modes[i] === m));
+    modes.forEach(id =>
+      document.getElementById('panel-' + id).classList.toggle('active', id === m));
+  }
+
+  // ===== PLAN =====
   function updateUpliftUI() {
     const mode = document.querySelector('input[name="p_umode"]:checked').value;
     document.getElementById('p_uplift_label').textContent = mode === 'pp' ? 'Variação esperada' : 'Variação relativa';
@@ -426,18 +579,14 @@
       val.textContent = '—'; sub.textContent = 'Preencha os campos';
       det.style.display = 'none'; preview.style.display = 'none'; card.classList.remove('active'); return;
     }
-
     const p1 = base / 100;
     const p2 = umode === 'pp' ? p1 + raw / 100 : p1 * (1 + raw / 100);
-
     if (p2 >= 1 || p2 <= 0) {
       val.textContent = '—'; sub.textContent = 'Taxa resultante fora do intervalo (0%–100%)';
       det.style.display = 'none'; preview.style.display = 'none'; card.classList.remove('active'); return;
     }
 
-    // Preview with direction indicator
-    const isNeg = p2 < p1;
-    const arrow = isNeg ? '↓' : '↑';
+    const isNeg = p2 < p1, arrow = isNeg ? '↓' : '↑';
     if (umode === 'pp') {
       const rel = ((p2 - p1) / p1 * 100).toFixed(1);
       preview.innerHTML = `${arrow} <strong>${(p1*100).toFixed(1)}%</strong> → <strong>${(p2*100).toFixed(1)}%</strong> (${rel > 0 ? '+' : ''}${rel}% relativo)`;
@@ -447,21 +596,15 @@
     }
     preview.style.display = 'block';
 
-    // Evan Miller formula — uses absolute delta, works for both directions
-    // Under H0, both groups have rate p1 (baseline)
-    // Under H1, group A has rate p2 (which can be > or < p1)
     const alpha = tails === 'two' ? (1 - ci / 100) / 2 : (1 - ci / 100);
-    const za = invNorm(1 - alpha);
-    const zb = invNorm(POWER);
+    const za = invNorm(1 - alpha), zb = invNorm(POWER);
     const delta = Math.abs(p2 - p1);
-
     const sd1 = Math.sqrt(2 * p1 * (1 - p1));
     const sd2 = Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
     const n = Math.ceil(Math.pow(za * sd1 + zb * sd2, 2) / (delta * delta));
 
     val.textContent = n.toLocaleString('pt-BR');
-    const sign = raw > 0 ? '+' : '';
-    const unit = umode === 'pp' ? 'p.p.' : '% relativo';
+    const sign = raw > 0 ? '+' : '', unit = umode === 'pp' ? 'p.p.' : '% relativo';
     const verb = isNeg ? 'redução' : 'aumento';
     sub.textContent = `por grupo — para detectar ${verb} de ${sign}${raw} ${unit}`;
     det.style.display = 'grid'; card.classList.add('active');
@@ -474,7 +617,7 @@
   document.querySelectorAll('input[name="p_umode"]').forEach(r => r.addEventListener('change', updateUpliftUI));
   calcPlan();
 
-  // ===== ANALYZE =====
+  // ===== ANALYZE PROPORTIONS =====
   function updateAnalyzeUI() {
     const mode = document.querySelector('input[name="a_mode"]:checked').value;
     if (mode === 'percent') {
@@ -506,24 +649,18 @@
       val.textContent = '—'; sub.textContent = 'Preencha os campos';
       det.style.display = 'none'; badge.innerHTML = ''; card.classList.remove('active'); return;
     }
-
     let pB, pA;
-    if (mode === 'percent') { pB = cB / 100; pA = cA / 100; }
-    else { pB = cB / nB; pA = cA / nA; }
-
+    if (mode === 'percent') { pB = cB / 100; pA = cA / 100; } else { pB = cB / nB; pA = cA / nA; }
     if (pB < 0 || pB > 1 || pA < 0 || pA > 1) {
       val.textContent = '—'; sub.textContent = 'Taxas entre 0% e 100%';
       det.style.display = 'none'; badge.innerHTML = ''; card.classList.remove('active'); return;
     }
-
     const pool = (pB * nB + pA * nA) / (nB + nA);
     const se = Math.sqrt(pool * (1 - pool) * (1 / nB + 1 / nA));
-
     if (se === 0) {
       val.textContent = '—'; sub.textContent = 'Sem variância';
       det.style.display = 'none'; badge.innerHTML = ''; card.classList.remove('active'); return;
     }
-
     const z = (pA - pB) / se;
     let pVal = tails === 'two' ? 2 * (1 - normCDF(Math.abs(z))) : (z > 0 ? 1 - normCDF(z) : normCDF(z));
     const conf = (1 - pVal) * 100;
@@ -537,13 +674,71 @@
     document.getElementById('analyzeUplift').textContent = (uplift >= 0 ? '+' : '') + uplift.toFixed(2) + '%';
     const isSig = pVal < 0.05;
     badge.innerHTML = `<div class="sig-badge ${isSig ? 'significant' : 'not-significant'}">
-      ${isSig ? '✓ Significativo (p < 0.05)' : '✗ Não significativo (p ≥ 0.05)'}
-    </div>`;
+      ${isSig ? '✓ Significativo (p < 0.05)' : '✗ Não significativo (p ≥ 0.05)'}</div>`;
   }
 
   ['a_nB', 'a_nA', 'a_convB', 'a_convA'].forEach(id => document.getElementById(id).addEventListener('input', calcAnalyze));
   ['a_test', 'a_mode'].forEach(n => document.querySelectorAll(`input[name="${n}"]`).forEach(r => r.addEventListener('change', n === 'a_mode' ? updateAnalyzeUI : calcAnalyze)));
   calcAnalyze();
+
+  // ===== T-TEST (compare means) =====
+  function calcTTest() {
+    const meanB = parseFloat(document.getElementById('t_meanB').value);
+    const meanA = parseFloat(document.getElementById('t_meanA').value);
+    const sdB = parseFloat(document.getElementById('t_sdB').value);
+    const sdA = parseFloat(document.getElementById('t_sdA').value);
+    const nB = parseFloat(document.getElementById('t_nB').value);
+    const nA = parseFloat(document.getElementById('t_nA').value);
+    const tails = document.querySelector('input[name="t_test"]:checked').value;
+
+    const card = document.getElementById('ttestResult'), val = document.getElementById('ttestValue');
+    const sub = document.getElementById('ttestSubtitle'), det = document.getElementById('ttestDetails');
+    const badge = document.getElementById('ttestBadge');
+
+    if (isNaN(meanB) || isNaN(meanA) || isNaN(sdB) || isNaN(sdA) || isNaN(nB) || isNaN(nA) ||
+        sdB <= 0 || sdA <= 0 || nB < 2 || nA < 2) {
+      val.textContent = '—'; sub.textContent = 'Preencha os campos (n ≥ 2, sd > 0)';
+      det.style.display = 'none'; badge.innerHTML = ''; card.classList.remove('active'); return;
+    }
+
+    // Welch's t-test (does not assume equal variances)
+    const se = Math.sqrt(sdA*sdA/nA + sdB*sdB/nB);
+    if (se === 0) {
+      val.textContent = '—'; sub.textContent = 'Sem variância';
+      det.style.display = 'none'; badge.innerHTML = ''; card.classList.remove('active'); return;
+    }
+
+    const t = (meanA - meanB) / se;
+    const df = welchDF(sdA, nA, sdB, nB);
+
+    // p-value from t-distribution
+    let pVal;
+    if (tails === 'two') {
+      pVal = 2 * (1 - tCDF(Math.abs(t), df));
+    } else {
+      pVal = t > 0 ? 1 - tCDF(t, df) : tCDF(t, df);
+    }
+    // Clamp
+    if (pVal < 0) pVal = 0;
+
+    const conf = (1 - pVal) * 100;
+    const diff = meanA - meanB;
+
+    val.textContent = conf.toFixed(1) + '%';
+    sub.textContent = `p-valor: ${pVal < 0.0001 ? '< 0.0001' : pVal.toFixed(4)} · t: ${t.toFixed(3)} · gl: ${Math.round(df)}`;
+    det.style.display = 'grid'; card.classList.add('active');
+    document.getElementById('ttestMeanB').textContent = meanB.toFixed(2);
+    document.getElementById('ttestMeanA').textContent = meanA.toFixed(2);
+    document.getElementById('ttestDiff').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(2);
+    const isSig = pVal < 0.05;
+    badge.innerHTML = `<div class="sig-badge ${isSig ? 'significant' : 'not-significant'}">
+      ${isSig ? '✓ Significativo (p < 0.05)' : '✗ Não significativo (p ≥ 0.05)'}</div>`;
+  }
+
+  ['t_meanB', 't_meanA', 't_sdB', 't_sdA', 't_nB', 't_nA'].forEach(id =>
+    document.getElementById(id).addEventListener('input', calcTTest));
+  document.querySelectorAll('input[name="t_test"]').forEach(r => r.addEventListener('change', calcTTest));
+  calcTTest();
 </script>
 </body>
 </html>
